@@ -1,6 +1,7 @@
 package co.edu.escuelaing.httpserver;
 
 import co.edu.escuelaing.microspringboot.annotations.GetMapping;
+import co.edu.escuelaing.microspringboot.annotations.RequestParam;
 import co.edu.escuelaing.microspringboot.annotations.RestController;
 import java.net.*;
 import java.io.*;
@@ -96,8 +97,10 @@ public class HttpServer {
         String header = "HTTP/1.1 200 OK\n\r"
                 + "content-type: text/html\n\r"
                 + "\n\r";
-        
-        return header + m.invoke(null);
+        RequestParam rp = (RequestParam) m.getParameterAnnotations()[0][0];
+        String queryParamName = rp.value();
+        String[] argsValues = new String[]{req.getValue(queryParamName)};
+        return header + m.invoke(null, argsValues);
     }
 
     public static void staticfiles(String localFilesPath) {
