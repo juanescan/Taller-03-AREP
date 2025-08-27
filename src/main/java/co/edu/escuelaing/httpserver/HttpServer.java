@@ -13,23 +13,25 @@ import java.util.Map;
 public class HttpServer {
 
     public static Map<String, Method> services = new HashMap();
-    public static void loadServices(String[] args) throws ClassNotFoundException{
+
+    public static void loadServices(String[] args) throws ClassNotFoundException {
         Class c = Class.forName(args[0]);
-        if(c.isAnnotationPresent(RestController.class)){
+        if (c.isAnnotationPresent(RestController.class)) {
             Method[] methods = c.getDeclaredMethods();
-            for(Method m: methods){
-                if(m.isAnnotationPresent(GetMapping.class)){
+            for (Method m : methods) {
+                if (m.isAnnotationPresent(GetMapping.class)) {
                     String mapping = m.getAnnotation(GetMapping.class).value();
                     services.put(mapping, m);
                 }
             }
         }
-        
+
     }
+
     public static void runServer(String[] args) throws IOException, URISyntaxException, ClassNotFoundException, IllegalAccessException, InvocationTargetException {
-        
+
         loadServices(args);
-        
+
         ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(35000);
@@ -87,8 +89,6 @@ public class HttpServer {
         serverSocket.close();
     }
 
-    
-
     private static String invokeService(URI requri) throws IllegalAccessException, InvocationTargetException {
         HttpRequest req = new HttpRequest(requri);
         HttpResponse res = new HttpResponse();
@@ -97,9 +97,15 @@ public class HttpServer {
         String header = "HTTP/1.1 200 OK\n\r"
                 + "content-type: text/html\n\r"
                 + "\n\r";
+        String[] argsValues = null;
         RequestParam rp = (RequestParam) m.getParameterAnnotations()[0][0];
-        String queryParamName = rp.value();
-        String[] argsValues = new String[]{req.getValue(queryParamName)};
+        if (requri.getQuery() == null) {
+            argsValues = new String[]{rp.defaultValue()};
+        } else {
+            
+            String queryParamName = rp.value();
+            argsValues = new String[]{req.getValue(queryParamName)};
+        }
         return header + m.invoke(null, argsValues);
     }
 
